@@ -1,0 +1,54 @@
+#!/bin/zsh
+
+# Function to hunt logs
+hunt() {
+    local flag="$1"
+    local pattern="$2"
+
+    # If no flag is provided, set default behavior
+    if [[ -z "$flag" ]]; then
+        # If no pattern and no flag is provided, return all
+            flag="-a"
+    elif [[ "${flag:0:1}" != "-" ]]; then
+        # If the flag does not start with "-", consider it as no flag provided
+        pattern="$flag"
+        flag="-a"
+    fi
+
+    case "$flag" in
+        -s | --start)
+            # Search for lines starting with the provided word
+            pattern="^$pattern"
+            ;;
+        -a | --middle)
+            # Search for lines containing the provided word anywhere
+            pattern="$pattern"
+            ;;
+        -e | --end)
+            # Search for lines ending with the provided word
+            pattern="$pattern$"
+            ;;
+        -h | --help)
+            echo "Usage: hunt [-s|-a|-e] <word>"
+            echo "Options:"
+            echo "  -s, --start    Search for lines starting with the provided word"
+            echo "  -a, --middle   Search for lines containing the provided word anywhere (default)"
+            echo "  -e, --end      Search for lines ending with the provided word"
+            echo "  -h, --help     Display this help message"
+            return 0
+            ;;
+        *)
+            if [[ -z "$pattern" ]]; then
+                # If no pattern is provided but flag is given, display usage
+                echo "Invalid flag. Use -h or --help for usage instructions."
+                return 1
+            fi
+            ;;
+    esac
+
+    # Execute the command using the specified pattern
+    awk -F 'Command: ' '{print $2}' ~/logs/commands.txt | grep "$pattern"
+}
+
+# Call the function with arguments
+hunt "$@"
